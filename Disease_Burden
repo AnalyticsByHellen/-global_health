@@ -1,0 +1,109 @@
+-- Which diseases affect the largest populations?
+SELECT 
+    Disease_Name,
+    SUM(Population_Affected) AS Total_Population
+FROM global_health_statistics
+GROUP BY  Disease_Name
+ORDER BY Total_Population DESC;
+
+-- Which diseases have the highest average prevalence rate?
+SELECT 
+    Disease_Name,
+    ROUND(AVG(Prevalence_Rate), 2) AS Avg_Prevalence_Rate
+FROM global_health_statistics
+GROUP BY Disease_Name
+ORDER BY Avg_Prevalence_Rate DESC;
+
+-- Which diseases have the highest average incidence rate?
+SELECT 
+    Disease_Name,
+    ROUND(AVG(Incidence_Rate), 2) AS Avg_Incidence_Rate
+FROM
+    global_health_statistics
+GROUP BY Disease_Name
+ORDER BY Avg_Incidence_Rate DESC;
+
+-- Which diseases have the highest mortality rate?
+SELECT 
+    Disease_Name,
+    ROUND(AVG(Mortality_Rate), 2) AS Avg_Mortality_Rate
+FROM
+    global_health_statistics
+GROUP BY Disease_Name
+ORDER BY Avg_Mortality_Rate DESC;
+
+-- Which diseases have the highest total DALYs?
+SELECT 
+    Disease_Name,
+    ROUND(AVG(DALYs), 2) AS DALYs
+FROM
+    global_health_statistics
+GROUP BY Disease_Name
+ORDER BY DALYs DESC;
+
+-- Which disease categories affect the largest populations?
+SELECT 
+    Disease_Category,
+    SUM(Population_Affected) AS Total_Population
+FROM global_health_statistics
+GROUP BY  Disease_Category
+ORDER BY Total_Population DESC;
+
+-- Which disease categories have the highest mortality rates?
+SELECT 
+    Disease_Category,
+   ROUND(AVG(Mortality_Rate), 2) AS Mortality_Rate
+FROM global_health_statistics
+GROUP BY  Disease_Category
+ORDER BY Mortality_Rate;
+
+-- Which diseases have both high prevalence and high mortality?
+SELECT 
+    Disease_Name,
+    ROUND(AVG(Prevalence_Rate), 2) AS Avg_Prevalence_Rate,
+    ROUND(AVG(Mortality_Rate), 2) AS Avg_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Disease_Name
+HAVING AVG(Prevalence_Rate) > (
+        SELECT AVG(Prevalence_Rate)
+        FROM global_health_statistics
+    )
+   AND AVG(Mortality_Rate) > (
+        SELECT AVG(Mortality_Rate)
+        FROM global_health_statistics
+    )
+ORDER BY Avg_Prevalence_Rate DESC;
+
+-- Which diseases have high prevalence but relatively low mortality?
+SELECT 
+    Disease_Name,
+    ROUND(AVG(Prevalence_Rate), 2) AS Avg_Prevalence_Rate,
+    ROUND(AVG(Mortality_Rate), 2) AS Avg_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Disease_Name
+HAVING AVG(Prevalence_Rate) > (
+        SELECT AVG(Prevalence_Rate)
+        FROM global_health_statistics
+    )
+   AND AVG(Mortality_Rate) < (
+        SELECT AVG(Mortality_Rate)
+        FROM global_health_statistics
+    )
+ORDER BY Avg_Prevalence_Rate DESC;
+
+-- Which diseases have low prevalence but high mortality?
+SELECT 
+    Disease_Name,
+    ROUND(AVG(Prevalence_Rate), 2) AS Avg_Prevalence_Rate,
+    ROUND(AVG(Mortality_Rate), 2) AS Avg_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Disease_Name
+HAVING AVG(Prevalence_Rate) < (
+        SELECT AVG(Prevalence_Rate)
+        FROM global_health_statistics
+    )
+   AND AVG(Mortality_Rate) > (
+        SELECT AVG(Mortality_Rate)
+        FROM global_health_statistics
+    )
+ORDER BY Avg_Prevalence_Rate DESC;
