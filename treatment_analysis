@@ -1,0 +1,69 @@
+-- Which treatment types are used most frequently?
+SELECT
+Treatment_Type,
+Count(*) AS Treatment_count
+FROM global_health_statistics
+GROUP BY Treatment_Type
+ORDER BY Treatment_count DESC;
+
+-- Which treatment types have the highest average cost?
+SELECT
+    Country,
+    ROUND(AVG(Healthcare_Access), 2) AS Avg_Healthcare_Access,
+    ROUND(AVG(Recovery_Rate), 2) AS Avg_Recovery_Rate
+FROM global_health_statistics
+GROUP BY Country
+ORDER BY Avg_Healthcare_Access DESC;
+
+-- Which treatment types have the lowest mortality rate?
+SELECT
+    Treatment_Type,
+    ROUND(AVG(Mortality_Rate), 2) AS Avg_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Treatment_type
+ORDER BY Avg_Mortality_Rate ASC;
+
+-- Which diseases are most commonly treated with each treatment type?
+WITH Disease_Treatment AS (
+    SELECT
+        Treatment_Type,
+        Disease_Name,
+        COUNT(*) AS Treatment_Count
+    FROM global_health_statistics
+    GROUP BY Treatment_Type, Disease_Name
+),
+Ranked_Diseases AS (
+    SELECT
+        Treatment_Type,
+        Disease_Name,
+        Treatment_Count,
+        RANK() OVER (
+            PARTITION BY Treatment_Type
+            ORDER BY Treatment_Count DESC
+        ) AS Disease_Rank
+    FROM Disease_Treatment
+)
+SELECT
+    Treatment_Type,
+    Disease_Name,
+    Treatment_Count
+FROM Ranked_Diseases
+WHERE Disease_Rank = 1
+ORDER BY Treatment_Type;
+
+-- Does availability of vaccines/treatment correspond with higher recovery rates?
+SELECT
+    Vaccine_Treatment_Availability,
+    COUNT(*) AS Total_Records,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate
+FROM global_health_statistics
+GROUP BY Vaccine_Treatment_Availability
+ORDER BY Average_Recovery_Rate DESC;
+
+-- Do diseases with available vaccines/treatments have lower mortality?
+SELECT
+    Vaccine_Treatment_Availability,
+    COUNT(*) AS Total_Records,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Vaccine_Treatment_Availability;
