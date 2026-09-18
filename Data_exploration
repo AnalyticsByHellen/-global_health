@@ -1,0 +1,50 @@
+-- UNDERSTANDING THE DATASET
+
+--
+DESCRIBE global_health_statistics;
+
+-- How many records are in the dataset?
+SELECT COUNT(*) FROM global_health_statistics;
+
+-- How many countries are represented?
+SELECT COUNT(DISTINCT Country) AS COUNT
+FROM global_health_statistics;
+
+-- What years are covered?
+SELECT DISTINCT YEAR AS COUNT_YEAR
+FROM global_health_statistics
+ORDER BY COUNT_YEAR DESC;
+
+-- How many different diseases are represented?
+SELECT DISTINCT Disease_Name AS Disease
+FROM global_health_statistics;
+
+-- How many disease categories are there?
+SELECT COUNT(DISTINCT Disease_Category) AS Disease
+FROM global_health_statistics;
+
+--  What age groups are represented?
+SELECT DISTINCT Age_Group AS Age
+FROM global_health_statistics
+ORDER BY age ASC;
+
+-- What treatment types are available?
+SELECT DISTINCT Treatment_Type AS Treatment
+FROM global_health_statistics;
+
+-- What is the distribution of males and females?
+SELECT 
+    Gender,
+    COUNT(*) AS Number_of_People,
+    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM global_health_statistics), 2) AS Percentage
+FROM global_health_statistics
+GROUP BY Gender;
+
+-- Which diseases affect the largest populations?
+SELECT 
+    Disease_Name,
+    SUM(Population_Affected) AS Total_Population
+FROM global_health_statistics
+GROUP BY  Disease_Name
+ORDER BY Total_Population DESC;
+
