@@ -1,0 +1,160 @@
+-- How has the total affected population changed over time?
+SELECT 
+    Year, SUM(Population_Affected) AS Total_Affected_Population
+FROM
+    global_health_statistics
+GROUP BY Year
+ORDER BY Year;
+
+-- How has the average prevalence rate changed over time?
+SELECT 
+    Year, 
+   ROUND(AVG(Prevalence_Rate),2) AS AVG_PREVELANCE_RATE
+FROM global_health_statistics
+GROUP BY Year
+ORDER BY Year;
+
+-- How has mortality changed over time?
+SELECT 
+    Year, 
+ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Year
+ORDER BY Year;
+
+-- How has the recovery rate changed over time?
+SELECT 
+    Year, 
+ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Year
+ORDER BY Year;
+
+-- Which diseases are increasing over time?
+WITH Disease_Year AS (
+    SELECT
+        Disease_Name,
+        Year,
+        AVG(Prevalence_Rate) AS Average_Prevalence
+    FROM global_health_statistics
+    GROUP BY Disease_Name, Year
+),
+Disease_Trend AS (
+    SELECT
+        Disease_Name,
+        MIN(Year) AS First_Year,
+        MAX(Year) AS Last_Year
+    FROM Disease_Year
+    GROUP BY Disease_Name
+)
+SELECT
+    dt.Disease_Name,
+    dt.First_Year,
+    dt.Last_Year,
+    ROUND(MAX(CASE 
+        WHEN dy.Year = dt.First_Year 
+        THEN dy.Average_Prevalence 
+    END), 2) AS First_Year_Prevalence,
+    ROUND(MAX(CASE 
+        WHEN dy.Year = dt.Last_Year 
+        THEN dy.Average_Prevalence 
+    END), 2) AS Last_Year_Prevalence
+FROM Disease_Trend dt
+JOIN Disease_Year dy
+    ON dt.Disease_Name = dy.Disease_Name
+GROUP BY
+    dt.Disease_Name,
+    dt.First_Year,
+    dt.Last_Year
+HAVING Last_Year_Prevalence > First_Year_Prevalence
+ORDER BY
+    (Last_Year_Prevalence - First_Year_Prevalence) DESC;
+    
+-- Which diseases are declining over time?
+WITH Disease_Year AS (
+    SELECT
+        Disease_Name,
+        Year,
+        AVG(Prevalence_Rate) AS Average_Prevalence
+    FROM global_health_statistics
+    GROUP BY Disease_Name, Year
+),
+Disease_Trend AS (
+    SELECT
+        Disease_Name,
+        MIN(Year) AS First_Year,
+        MAX(Year) AS Last_Year
+    FROM Disease_Year
+    GROUP BY Disease_Name
+)
+SELECT
+    dt.Disease_Name,
+    dt.First_Year,
+    dt.Last_Year,
+    ROUND(MAX(CASE 
+        WHEN dy.Year = dt.First_Year 
+        THEN dy.Average_Prevalence 
+    END), 2) AS First_Year_Prevalence,
+    ROUND(MAX(CASE 
+        WHEN dy.Year = dt.Last_Year 
+        THEN dy.Average_Prevalence 
+    END), 2) AS Last_Year_Prevalence
+FROM Disease_Trend dt
+JOIN Disease_Year dy
+    ON dt.Disease_Name = dy.Disease_Name
+GROUP BY
+    dt.Disease_Name,
+    dt.First_Year,
+    dt.Last_Year
+HAVING Last_Year_Prevalence < First_Year_Prevalence
+ORDER BY
+    (First_Year_Prevalence - Last_Year_Prevalence) DESC;
+    
+-- Which disease categories are becoming more prevalent?
+WITH Category_Year AS (
+    SELECT
+        Disease_Category,
+        Year,
+        AVG(Prevalence_Rate) AS Average_Prevalence
+    FROM global_health_statistics
+    GROUP BY Disease_Category, Year
+),
+Category_Trend AS (
+    SELECT
+        Disease_Category,
+        MIN(Year) AS First_Year,
+        MAX(Year) AS Last_Year
+    FROM Category_Year
+    GROUP BY Disease_Category
+)
+SELECT
+    ct.Disease_Category,
+    ct.First_Year,
+    ct.Last_Year,
+    ROUND(MAX(CASE 
+        WHEN cy.Year = ct.First_Year 
+        THEN cy.Average_Prevalence 
+    END), 2) AS First_Year_Prevalence,
+    ROUND(MAX(CASE 
+        WHEN cy.Year = ct.Last_Year 
+        THEN cy.Average_Prevalence 
+    END), 2) AS Last_Year_Prevalence
+FROM Category_Trend ct
+JOIN Category_Year cy
+    ON ct.Disease_Category = cy.Disease_Category
+GROUP BY
+    ct.Disease_Category,
+    ct.First_Year,
+    ct.Last_Year
+HAVING Last_Year_Prevalence > First_Year_Prevalence
+ORDER BY
+    (Last_Year_Prevalence - First_Year_Prevalence) DESC;
+    
+-- Which years had the highest total DALYs?
+SELECT
+Year,
+SUM(DALYs) AS Total_DALYs
+FROM  global_health_statistics
+GROUP BY Year
+ORDER BY Total_DALYs DESC
+LIMIT 5;
