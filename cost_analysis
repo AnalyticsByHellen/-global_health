@@ -1,0 +1,49 @@
+-- Which diseases have the highest average treatment cost?
+SELECT
+    Disease_Name,
+    ROUND(AVG(Average_Treatment_Cost), 2) AS Average_Treatment_Cost
+FROM global_health_statistics
+GROUP BY Disease_Name
+ORDER BY Average_Treatment_Cost;
+
+-- Which countries have the highest average treatment costs?
+SELECT
+   Country,
+    ROUND(AVG(Average_Treatment_Cost), 2) AS Average_Treatment_Cost
+FROM global_health_statistics
+GROUP BY  Country 
+ORDER BY  Average_Treatment_Cost DESC;
+
+-- Which treatment types are the most expensive?
+SELECT
+Treatment_Type,
+    ROUND(AVG(Average_Treatment_Cost), 2) AS Average_Treatment_Cost
+FROM global_health_statistics
+GROUP BY  Treatment_Type 
+ORDER BY  Average_Treatment_Cost DESC;
+
+-- Are expensive treatments associated with higher recovery rates?
+SELECT
+Treatment_Type,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate,
+    ROUND(AVG(Average_Treatment_Cost), 2) AS Average_Treatment_Cost
+FROM global_health_statistics
+GROUP BY  Treatment_Type 
+ORDER BY  Average_Treatment_Cost DESC;
+
+-- Which diseases have high treatment costs but relatively low recovery rates?
+SELECT
+    Disease_Name,
+    ROUND(AVG(Average_Treatment_Cost), 2) AS Average_Treatment_Cost,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate
+FROM global_health_statistics
+GROUP BY Disease_Name
+HAVING AVG(Average_Treatment_Cost) > (
+    SELECT AVG(Average_Treatment_Cost)
+    FROM global_health_statistics
+)
+AND AVG(Recovery_Rate) < (
+    SELECT AVG(Recovery_Rate)
+    FROM global_health_statistics
+)
+ORDER BY Average_Treatment_Cost DESC;
