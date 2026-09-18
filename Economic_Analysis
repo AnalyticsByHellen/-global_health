@@ -1,0 +1,76 @@
+-- Does higher per-capita income correspond with better healthcare access?
+SELECT
+Country,
+    ROUND(AVG(per_capita_Income), 2) AS Average_per_capita_Income,
+    ROUND(AVG(Healthcare_Access), 2) AS Average_Healthcare_Access
+FROM global_health_statistics
+GROUP BY Country 
+ORDER BY  Average_per_capita_Income DESC;
+
+-- Do higher-income countries have higher recovery rates?
+SELECT
+Country,
+    ROUND(AVG(per_capita_Income), 2) AS Average_per_capita_Income,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate
+FROM global_health_statistics
+GROUP BY Country 
+ORDER BY  Average_per_capita_Income DESC;
+
+-- Do lower-income countries have higher mortality rates?
+SELECT
+Country,
+    ROUND(AVG(per_capita_Income), 2) AS Average_per_capita_Income,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Country 
+ORDER BY Average_per_capita_Income ASC;
+
+-- . Which countries have high income but relatively poor healthcare outcomes?
+SELECT
+    Country,
+    ROUND(AVG(Per_Capita_Income), 2) AS Average_Income,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Country
+HAVING AVG(Per_Capita_Income) > (
+    SELECT AVG(Per_Capita_Income)
+    FROM global_health_statistics
+)
+AND (
+    AVG(Recovery_Rate) < (
+        SELECT AVG(Recovery_Rate)
+        FROM global_health_statistics
+    )
+    OR
+    AVG(Mortality_Rate) > (
+        SELECT AVG(Mortality_Rate)
+        FROM global_health_statistics
+    )
+)
+ORDER BY Average_Income DESC;
+
+-- Which countries have low income but relatively good healthcare outcomes?
+SELECT
+    Country,
+    ROUND(AVG(Per_Capita_Income), 2) AS Average_Income,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Country
+HAVING AVG(Per_Capita_Income) < (
+    SELECT AVG(Per_Capita_Income)
+    FROM global_health_statistics
+)
+AND (
+    AVG(Recovery_Rate) > (
+        SELECT AVG(Recovery_Rate)
+        FROM global_health_statistics
+    )
+    OR
+    AVG(Mortality_Rate) < (
+        SELECT AVG(Mortality_Rate)
+        FROM global_health_statistics
+    )
+)
+ORDER BY Average_Income ASC;
