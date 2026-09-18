@@ -1,0 +1,80 @@
+-- Which age group has the largest affected population?
+SELECT 
+    Age_Group,
+  SUM(Population_Affected) AS Total_population
+FROM global_health_statistics
+GROUP BY  Age_Group
+ORDER BY Age_Group ASC;
+
+-- Which age group has the highest average mortality rate?
+SELECT 
+    Age_Group,
+   ROUND(AVG(Mortality_Rate), 2) AS Mortalityrate
+FROM global_health_statistics
+GROUP BY  Age_Group
+ORDER BY Mortalityrate DESC;
+
+-- Which age group has the highest average recovery rate?
+SELECT 
+    Age_Group,
+   ROUND(AVG(Recovery_Rate), 2) AS Recoveryrate
+FROM global_health_statistics
+GROUP BY  Age_Group
+ORDER BY Recoveryrate DESC;
+
+-- Which gender has the largest affected population?
+SELECT 
+    Gender,
+  COUNT(Population_Affected) AS populationaffected
+FROM global_health_statistics
+GROUP BY  Gender
+ORDER BY populationaffected ;
+
+-- Which gender has the highest average mortality rate?
+SELECT 
+    Gender,
+ROUND(AVG(Mortality_Rate), 2) AS Mortalityrate
+FROM global_health_statistics
+GROUP BY  Gender
+ORDER BY Mortalityrate DESC;
+
+-- Which diseases are most common among each age group?
+WITH Disease_By_Age AS (
+    SELECT
+        Age_group,
+        Disease_Name,
+        COUNT(*) AS Number_of_Cases
+    FROM global_health_statistics
+    GROUP BY Age_group, Disease_Name
+),
+Ranked_Diseases AS (
+    SELECT
+        Age_group,
+        Disease_Name,
+        Number_of_Cases,
+        RANK() OVER (
+            PARTITION BY Age_group
+            ORDER BY Number_of_Cases DESC
+        ) AS Disease_Rank
+    FROM Disease_By_Age
+)
+SELECT
+    Age_group,
+    Disease_Name,
+    Number_of_Cases
+FROM Ranked_Diseases
+WHERE Disease_Rank = 1
+ORDER BY Age_group ;
+
+-- Which diseases affect males and females differently
+SELECT
+    Disease_Name,
+    SUM(CASE WHEN Gender = 'Male' THEN 1 ELSE 0 END) AS Male_Cases,
+    SUM(CASE WHEN Gender = 'Female' THEN 1 ELSE 0 END) AS Female_Cases,
+    ABS(
+        SUM(CASE WHEN Gender = 'Male' THEN 1 ELSE 0 END) -
+        SUM(CASE WHEN Gender = 'Female' THEN 1 ELSE 0 END)
+    ) AS Difference
+FROM global_health_statistics
+GROUP BY Disease_Name
+ORDER BY Difference DESC;
