@@ -1,0 +1,76 @@
+-- Does education index correlate with healthcare access?
+SELECT
+Country,
+    ROUND(AVG(Education_Index), 2) AS Average_Education_Index,
+    ROUND(AVG(Healthcare_Access), 2) AS Average_Healtcare_Access
+FROM global_health_statistics
+GROUP BY Country 
+ORDER BY Average_Education_Index DESC;
+
+-- Do countries with higher education indexes have higher recovery rates?
+SELECT
+Country,
+    ROUND(AVG(Education_Index), 2) AS Average_Education_Index,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate
+FROM global_health_statistics
+GROUP BY Country 
+ORDER BY Average_Education_Index DESC;
+
+-- Does urbanization correspond with better healthcare access?
+SELECT
+Country,
+    ROUND(AVG(Urbanization_Rate), 2) AS Average_Urbanization_Rate,
+    ROUND(AVG(Healthcare_Access), 2) AS Average_Healthcare_Access
+FROM global_health_statistics
+GROUP BY Country 
+ORDER BY Average_Urbanization_Rate DESC;
+
+-- Which countries have high urbanization but low healthcare access?
+SELECT
+    Country,
+     ROUND(AVG(Urbanization_Rate), 2) AS Average_Urbanization_Rate,
+    ROUND(AVG(Healthcare_Access), 2) AS Average_Healthcare_Access
+FROM global_health_statistics
+GROUP BY Country
+HAVING AVG(Urbanization_Rate) > (
+    SELECT AVG(Urbanization_Rate)
+    FROM global_health_statistics
+)
+AND (
+    AVG(Healthcare_Access) < (
+        SELECT AVG(Healthcare_Access)
+        FROM global_health_statistics
+    )
+   
+    )
+
+ORDER BY Average_Urbanization_Rate DESC;
+
+-- Which countries have low urbanization but high healthcare access?
+SELECT
+    Country,
+     ROUND(AVG(Urbanization_Rate), 2) AS Average_Urbanization_Rate,
+    ROUND(AVG(Healthcare_Access), 2) AS Average_Healthcare_Access
+FROM global_health_statistics
+GROUP BY Country
+HAVING AVG(Urbanization_Rate) < (
+    SELECT AVG(Urbanization_Rate)
+    FROM global_health_statistics
+)
+AND (
+    AVG(Healthcare_Access) > (
+        SELECT AVG(Healthcare_Access)
+        FROM global_health_statistics
+    )
+   
+    )
+
+ORDER BY Average_Urbanization_Rate ASC;
+
+-- How has the total affected population changed over time?
+SELECT 
+    Year, SUM(Population_Affected) AS Total_Affected_Population
+FROM
+    global_health_statistics
+GROUP BY Year
+ORDER BY Year;
