@@ -1,0 +1,284 @@
+
+-- . Which countries have the greatest overall health burden?
+SELECT
+    Country,
+    SUM(Population_Affected) AS Total_Affected_Population,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate,
+    SUM(DALYs) AS Total_DALYs,
+    ROUND(AVG(Prevalence_Rate), 2) AS Average_Prevalence_Rate
+FROM global_health_statistics
+GROUP BY Country
+ORDER BY
+    Total_Affected_Population DESC,
+    Total_DALYs DESC,
+    Average_Mortality_Rate DESC,
+    Average_Prevalence_Rate DESC;
+
+-- Which diseases represent the greatest health burden globally?
+SELECT
+    Disease_Name,
+    SUM(Population_Affected) AS Total_Affected_Population,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate,
+    SUM(DALYs) AS Total_DALYs,
+    ROUND(AVG(Prevalence_Rate), 2) AS Average_Prevalence_Rate
+FROM global_health_statistics
+GROUP BY Disease_Name
+ORDER BY
+    Total_Affected_Population DESC,
+    Total_DALYs DESC;
+    
+-- Which countries have poor healthcare resources and poor health outcomes?
+SELECT
+    Country,
+    ROUND(AVG(Healthcare_Access), 2) AS Average_Healthcare_Access,
+    ROUND(AVG(Doctors_Per_1000), 2) AS Average_Doctors_Per_1000,
+    ROUND(AVG(Hospital_Beds_Per_1000), 2) AS Average_Hospital_Beds_Per_1000,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate
+FROM global_health_statistics
+GROUP BY Country
+HAVING
+    AVG(Healthcare_Access) < (
+        SELECT AVG(Healthcare_Access)
+        FROM global_health_statistics
+    )
+    AND AVG(Doctors_Per_1000) < (
+        SELECT AVG(Doctors_Per_1000)
+        FROM global_health_statistics
+    )
+    AND AVG(Hospital_Beds_Per_1000) < (
+        SELECT AVG(Hospital_Beds_Per_1000)
+        FROM global_health_statistics
+    )
+    AND AVG(Mortality_Rate) > (
+        SELECT AVG(Mortality_Rate)
+        FROM global_health_statistics
+    )
+    AND AVG(Recovery_Rate) < (
+        SELECT AVG(Recovery_Rate)
+        FROM global_health_statistics
+    )
+ORDER BY Average_Mortality_Rate DESC;
+
+-- Which countries have strong healthcare resources but poor outcomes?
+SELECT
+    Country,
+    ROUND(AVG(Healthcare_Access), 2) AS Average_Healthcare_Access,
+    ROUND(AVG(Doctors_Per_1000), 2) AS Average_Doctors_Per_1000,
+    ROUND(AVG(Hospital_Beds_Per_1000), 2) AS Average_Hospital_Beds_Per_1000,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate
+FROM global_health_statistics
+GROUP BY Country
+HAVING
+    AVG(Healthcare_Access) > (
+        SELECT AVG(Healthcare_Access)
+        FROM global_health_statistics
+    )
+    AND AVG(Doctors_Per_1000) > (
+        SELECT AVG(Doctors_Per_1000)
+        FROM global_health_statistics
+    )
+    AND AVG(Hospital_Beds_Per_1000) > (
+        SELECT AVG(Hospital_Beds_Per_1000)
+        FROM global_health_statistics
+    )
+    AND (
+        AVG(Mortality_Rate) > (
+            SELECT AVG(Mortality_Rate)
+            FROM global_health_statistics
+        )
+        OR
+        AVG(Recovery_Rate) < (
+            SELECT AVG(Recovery_Rate)
+            FROM global_health_statistics
+        )
+    )
+ORDER BY Average_Mortality_Rate DESC;
+
+-- Which diseases have the highest health burden despite relatively low prevalence?
+SELECT
+    Disease_Name,
+    ROUND(AVG(Prevalence_Rate), 2) AS Average_Prevalence_Rate,
+    SUM(DALYs) AS Total_DALYs,
+    SUM(Population_Affected) AS Total_Affected_Population,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Disease_Name
+HAVING
+    AVG(Prevalence_Rate) < (
+        SELECT AVG(Prevalence_Rate)
+        FROM global_health_statistics
+    )
+    AND SUM(DALYs) > (
+        SELECT AVG(Disease_DALYs)
+        FROM (
+            SELECT
+                Disease_Name,
+                SUM(DALYs) AS Disease_DALYs
+            FROM global_health_statistics
+            GROUP BY Disease_Name
+        ) AS Disease_Totals
+    )
+ORDER BY Total_DALYs DESC;
+
+-- Which demographic groups are most affected by high-mortality diseases?
+WITH High_Mortality_Diseases AS (
+    SELECT
+        Disease_Name
+    FROM global_health_statistics
+    GROUP BY Disease_Name
+    HAVING AVG(Mortality_Rate) > (
+        SELECT AVG(Mortality_Rate)
+        FROM global_health_statistics
+    )
+)
+SELECT
+    Age_Group,
+    Gender,
+    SUM(Population_Affected) AS Total_Affected_Population,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate,
+    COUNT(*) AS Number_of_Records
+FROM global_health_statistics
+WHERE Disease_Name IN (
+    SELECT Disease_Name
+    FROM High_Mortality_Diseases
+)
+GROUP BY Age_Group, Gender
+ORDER BY Average_Mortality_Rate DESC;
+
+-- Is healthcare access associated with recovery?
+SELECT
+Country,
+   ROUND(AVG(Healthcare_Access), 2) AS Average_Healthcare_Access,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate
+FROM global_health_statistics
+GROUP BY Country 
+ORDER BY  Average_Healthcare_Access DESC;
+
+-- Lets do its cor-relation
+SELECT
+    ROUND(
+        (
+            COUNT(*) * SUM(Healthcare_Access * Recovery_Rate)
+            - SUM(Healthcare_Access) * SUM(Recovery_Rate)
+        )
+        /
+        (
+            SQRT(
+                (COUNT(*) * SUM(Healthcare_Access * Healthcare_Access)
+                - POW(SUM(Healthcare_Access), 2))
+                *
+                (COUNT(*) * SUM(Recovery_Rate * Recovery_Rate)
+                - POW(SUM(Recovery_Rate), 2))
+            )
+        ),
+        3
+    ) AS Correlation
+FROM global_health_statistics;
+-- Results: There is no Relationship 
+
+-- Is economic development associated with better health outcomes?
+SELECT
+Country,
+     ROUND(AVG (per_capita_income), 2) AS Average_per_capita_income,
+     ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate,
+	 ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Country 
+ORDER BY  Average_per_capita_income DESC;
+
+-- Lets do the correlation; Income vs Recovery
+SELECT
+    ROUND(
+        (
+            COUNT(*) * SUM(Per_Capita_Income * Recovery_Rate)
+            - SUM(Per_Capita_Income) * SUM(Recovery_Rate)
+        )
+        /
+        (
+            SQRT(
+                (COUNT(*) * SUM(Per_Capita_Income * Per_Capita_Income)
+                - POW(SUM(Per_Capita_Income), 2))
+                *
+                (COUNT(*) * SUM(Recovery_Rate * Recovery_Rate)
+                - POW(SUM(Recovery_Rate), 2))
+            )
+        ),
+        3
+    ) AS Income_Recovery_Correlation
+FROM global_health_statistics;
+
+-- There is no relationship
+
+-- lets do income vs Moratlity
+SELECT
+    ROUND(
+        (
+            COUNT(*) * SUM(Per_Capita_Income * Mortality_Rate)
+            - SUM(Per_Capita_Income) * SUM(Mortality_Rate)
+        )
+        /
+        (
+            SQRT(
+                (COUNT(*) * SUM(Per_Capita_Income * Per_Capita_Income)
+                - POW(SUM(Per_Capita_Income), 2))
+                *
+                (COUNT(*) * SUM(Mortality_Rate * Mortality_Rate)
+                - POW(SUM(Mortality_Rate), 2))
+            )
+        ),
+        3
+    ) AS Income_Mortality_Correlation
+FROM global_health_statistics;
+
+-- Strong Negative relationship
+
+-- Which countries appear to be improving most over the 5-year period?
+SELECT
+Country,
+     ROUND(AVG (Improvement_5_Years), 2) AS Average_Improvement_5_Years
+	
+FROM global_health_statistics
+GROUP BY Country 
+ORDER BY Average_Improvement_5_Years  DESC
+LIMIT 10;
+
+-- Which diseases show the greatest improvement over 5 years?
+SELECT
+Disease_Name,
+     ROUND(AVG (Improvement_5_Years), 2) AS Average_Improvement_5_Years
+	
+FROM global_health_statistics
+GROUP BY Disease_Name
+ORDER BY Average_Improvement_5_Years  DESC
+LIMIT 10;
+
+-- Which diseases should potentially receive the greatest healthcare attention based on prevalence, mortality and DALYs?
+SELECT
+    Disease_Name,
+    ROUND(AVG(Prevalence_Rate), 2) AS Average_Prevalence_Rate,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate,
+    SUM(DALYs) AS Total_DALYs
+FROM global_health_statistics
+GROUP BY Disease_Name
+HAVING
+    AVG(Prevalence_Rate) > (
+        SELECT AVG(Prevalence_Rate)
+        FROM global_health_statistics
+    )
+    AND AVG(Mortality_Rate) > (
+        SELECT AVG(Mortality_Rate)
+        FROM global_health_statistics
+    )
+    AND SUM(DALYs) > (
+        SELECT AVG(Disease_DALYs)
+        FROM (
+            SELECT
+                Disease_Name,
+                SUM(DALYs) AS Disease_DALYs
+            FROM global_health_statistics
+            GROUP BY Disease_Name
+        ) AS Disease_Totals
+    )
+ORDER BY Total_DALYs DESC;
