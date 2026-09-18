@@ -1,0 +1,57 @@
+CREATE DATABASE global_health;
+
+CREATE TABLE global_health_statistics (
+    Country VARCHAR(100),
+    Year INT,
+    Disease_Name VARCHAR(100),
+    Disease_Category VARCHAR(100),
+    Prevalence_Rate DECIMAL(5,2),
+    Incidence_Rate DECIMAL(5,2),
+    Mortality_Rate DECIMAL(5,2),
+    Age_Group VARCHAR(20),
+    Gender VARCHAR(20),
+    Population_Affected INT,
+    Healthcare_Access DECIMAL(5,2),
+    Doctors_Per_1000 DECIMAL(5,2),
+    Hospital_Beds_Per_1000 DECIMAL(5,2),
+    Treatment_Type VARCHAR(100),
+    Average_Treatment_Cost DECIMAL(12,2),
+    Vaccine_Treatment_Availability VARCHAR(20),
+    Recovery_Rate DECIMAL(5,2),
+    DALYs INT,
+    Improvement_5_Years DECIMAL(5,2),
+    Per_Capita_Income DECIMAL(12,2),
+    Education_Index DECIMAL(5,2),
+    Urbanization_Rate DECIMAL(5,2)
+);
+
+LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/Global Health Statistics.csv'
+INTO TABLE global_health_statistics
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+SELECT COUNT(*) FROM global_health_statistics;
+SELECT *
+FROM global_health_statistics
+LIMIT 10;
+
+SELECT
+    COUNT(*) AS total_rows,
+    COUNT(Country) AS countries,
+    COUNT(Year) AS years,
+    COUNT(Disease_Name) AS diseases,
+    COUNT(Population_Affected) AS population_affected,
+    COUNT(Mortality_Rate) AS mortality_rate,
+    COUNT(Recovery_Rate) AS recovery_rate
+FROM global_health_statistics;
+
+SELECT DISTINCT Gender
+FROM global_health_statistics;
+
+SELECT DISTINCT Disease_Category
+FROM global_health_statistics;
+
+SELECT DISTINCT Treatment_Type
+FROM global_health_statistics;
