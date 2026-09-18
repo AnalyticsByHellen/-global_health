@@ -1,0 +1,258 @@
+-- What are the top 5 diseases by total population affected?
+SELECT
+Disease_Name,
+SUM(population_affected) AS Total_population_affected
+FROM global_health_statistics
+GROUP BY Disease_Name
+order by Total_population_affected DESC
+LIMIT 5;
+
+-- What are the top 3 diseases within each disease category?
+WITH Disease_Category_Total AS (
+    SELECT
+        Disease_Category,
+        Disease_Name,
+        SUM(Population_Affected) AS Total_Affected_Population
+    FROM global_health_statistics
+    GROUP BY Disease_Category, Disease_Name
+),
+Ranked_Diseases AS (
+    SELECT
+        Disease_Category,
+        Disease_Name,
+        Total_Affected_Population,
+        RANK() OVER (
+            PARTITION BY Disease_Category
+            ORDER BY Total_Affected_Population DESC
+        ) AS Disease_Rank
+    FROM Disease_Category_Total
+)
+SELECT
+    Disease_Category,
+    Disease_Name,
+    Total_Affected_Population,
+    Disease_Rank
+FROM Ranked_Diseases
+WHERE Disease_Rank <= 3
+ORDER BY Disease_Category, Disease_Rank;
+
+-- What are the top 3 countries by affected population?
+SELECT
+    Country,
+    SUM(Population_Affected) AS Total_Affected_Population
+FROM global_health_statistics
+GROUP BY Country
+ORDER BY Total_Affected_Population DESC
+LIMIT 3;
+
+-- What is the most common disease in each country?
+WITH Disease_Count AS (
+    SELECT
+        Country,
+        Disease_Name,
+        COUNT(*) AS Disease_Count
+    FROM global_health_statistics
+    GROUP BY Country, Disease_Name
+),
+Ranked_Diseases AS (
+    SELECT
+        Country,
+        Disease_Name,
+        Disease_Count,
+        RANK() OVER (
+            PARTITION BY Country
+            ORDER BY Disease_Count DESC
+        ) AS Disease_Rank
+    FROM Disease_Count
+)
+SELECT
+    Country,
+    Disease_Name,
+    Disease_Count
+FROM Ranked_Diseases
+WHERE Disease_Rank = 1
+ORDER BY Country;
+
+-- What is the highest-mortality disease in each country?
+WITH Disease_Mortality AS (
+    SELECT
+        Country,
+        Disease_Name,
+        AVG(Mortality_Rate) AS Average_Mortality_Rate
+    FROM global_health_statistics
+    GROUP BY Country, Disease_Name
+),
+Ranked_Diseases AS (
+    SELECT
+        Country,
+        Disease_Name,
+        Average_Mortality_Rate,
+        RANK() OVER (
+            PARTITION BY Country
+            ORDER BY Average_Mortality_Rate DESC
+        ) AS Disease_Rank
+    FROM Disease_Mortality
+)
+SELECT
+    Country,
+    Disease_Name,
+    ROUND(Average_Mortality_Rate, 2) AS Average_Mortality_Rate
+FROM Ranked_Diseases
+WHERE Disease_Rank = 1
+ORDER BY Country;
+
+-- Which diseases have an above-average mortality rate?
+SELECT
+    Disease_Name,
+    ROUND(AVG(Mortality_Rate), 2) AS Average_Mortality_Rate
+FROM global_health_statistics
+GROUP BY Disease_Name
+HAVING AVG(Mortality_Rate) > (
+    SELECT AVG(Mortality_Rate)
+    FROM global_health_statistics
+)
+ORDER BY Average_Mortality_Rate DESC;
+
+-- Which countries have above-average healthcare access?
+SELECT
+    Country,
+    ROUND(AVG(Healthcare_Access), 2) AS Average_Healthcare_Access
+FROM global_health_statistics
+GROUP BY Country
+HAVING AVG(Healthcare_Access) > (
+    SELECT AVG(Healthcare_Access)
+    FROM global_health_statistics
+)
+ORDER BY Average_Healthcare_Access DESC;
+
+-- Which diseases have above-average treatment costs?
+SELECT
+    Disease_Name,
+    ROUND(AVG(Average_Treatment_Cost), 2) AS Average_Treatment_Cost
+FROM global_health_statistics
+GROUP BY Disease_Name
+HAVING AVG(Average_Treatment_Cost) > (
+    SELECT AVG(Average_Treatment_Cost)
+    FROM global_health_statistics
+)
+ORDER BY Average_Treatment_Cost DESC;
+
+-- Which countries perform above the global average recovery rate?
+SELECT
+    Country,
+    ROUND(AVG(Recovery_Rate), 2) AS Average_Recovery_Rate
+FROM global_health_statistics
+GROUP BY Country
+HAVING AVG(Recovery_Rate) > (
+    SELECT AVG(Recovery_Rate)
+    FROM global_health_statistics
+)
+ORDER BY Average_Recovery_Rate DESC;
+
+-- Rank countries by healthcare access.
+WITH Country_Access AS (
+    SELECT
+        Country,
+        AVG(Healthcare_Access) AS Average_Healthcare_Access
+    FROM global_health_statistics
+    GROUP BY Country
+)
+SELECT
+    Country,
+    ROUND(Average_Healthcare_Access, 2) AS Average_Healthcare_Access,
+    RANK() OVER (
+        ORDER BY Average_Healthcare_Access DESC
+    ) AS Healthcare_Access_Rank
+FROM Country_Access
+ORDER BY Healthcare_Access_Rank;
+
+-- Rank diseases by total DALYs.
+WITH Disease_DALYs AS (
+    SELECT
+        Disease_Name,
+        SUM(DALYs) AS Total_DALYs
+    FROM global_health_statistics
+    GROUP BY Disease_Name
+)
+SELECT
+    Disease_Name,
+    Total_DALYs,
+    RANK() OVER (
+        ORDER BY Total_DALYs DESC
+    ) AS DALYs_Rank
+FROM Disease_DALYs
+ORDER BY DALYs_Rank;
+
+-- Rank disease categories by affected population.
+WITH Category_Population AS (
+    SELECT
+        Disease_Category,
+        SUM(Population_Affected) AS Total_Affected_Population
+    FROM global_health_statistics
+    GROUP BY Disease_Category
+)
+SELECT
+    Disease_Category,
+    Total_Affected_Population,
+    RANK() OVER (
+        ORDER BY Total_Affected_Population DESC
+    ) AS Population_Rank
+FROM Category_Population
+ORDER BY Population_Rank;
+
+-- Find the second-highest mortality disease in each disease category.
+WITH Disease_Mortality AS (
+    SELECT
+        Disease_Category,
+        Disease_Name,
+        AVG(Mortality_Rate) AS Average_Mortality_Rate
+    FROM global_health_statistics
+    GROUP BY Disease_Category, Disease_Name
+),
+Ranked_Diseases AS (
+    SELECT
+        Disease_Category,
+        Disease_Name,
+        Average_Mortality_Rate,
+        DENSE_RANK() OVER (
+            PARTITION BY Disease_Category
+            ORDER BY Average_Mortality_Rate DESC
+        ) AS Mortality_Rank
+    FROM Disease_Mortality
+)
+SELECT
+    Disease_Category,
+    Disease_Name,
+    ROUND(Average_Mortality_Rate, 2) AS Average_Mortality_Rate
+FROM Ranked_Diseases
+WHERE Mortality_Rank = 2
+ORDER BY Disease_Category;
+
+-- Find the top 3 countries within each disease category based on affected population
+WITH Category_Country_Population AS (
+    SELECT
+        Disease_Category,
+        Country,
+        SUM(Population_Affected) AS Total_Affected_Population
+    FROM global_health_statistics
+    GROUP BY Disease_Category, Country
+),
+Ranked_Countries AS (
+    SELECT
+        Disease_Category,
+        Country,
+        Total_Affected_Population,
+        RANK() OVER (
+            PARTITION BY Disease_Category
+            ORDER BY Total_Affected_Population DESC
+        ) AS Country_Rank
+    FROM Category_Country_Population
+)
+SELECT
+    Disease_Category,
+    Country,
+    Total_Affected_Population,
+    Country_Rank
+FROM Ranked_Countries
+WHERE Country_Rank <= 3
+ORDER BY Disease_Category, Country_Rank;
